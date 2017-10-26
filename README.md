@@ -16,7 +16,7 @@ To create the image `axfelix/ojs-docker`, execute the following command on the o
 Running your LAMP docker image
 ------------------------------
 
-Start your image binding the external ports 80 and 3306 in all interfaces to your container:
+Start your image by binding a port to the container's port 80:
 
 	docker run -d -p 8008:80 axfelix/ojs-docker
 
@@ -44,11 +44,8 @@ Setting a specific password for the MySQL server admin account
 If you want to use a preset password instead of a random generated one, you can
 set the environment variable `MYSQL_PASS` to your specific password when running the container:
 
-	docker run -d -p 80:80 -p 3306:3306 -e MYSQL_PASS="mypass" tutum/lamp
+	docker run -d -p 80:80 -e MYSQL_PASS="mypass" tutum/lamp
 
-You can now test your new admin password:
-
-	mysql -uadmin -p"mypass"
 
 
 Disabling .htaccess
