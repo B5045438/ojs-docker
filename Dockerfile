@@ -1,5 +1,5 @@
 FROM ubuntu:trusty
-MAINTAINER Fernando Mayo <fernando@tutum.co>, Feng Honglin <hfeng@tutum.co>
+MAINTAINER Alex Garnett <garnett@sfu.ca>
 
 # Install packages
 ENV DEBIAN_FRONTEND noninteractive
@@ -27,8 +27,8 @@ RUN chmod 755 /*.sh
 ADD apache_default /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# Configure /app folder with sample app
-RUN git clone https://github.com/fermayo/hello-world-lamp.git /app
+# Get & setup OJS
+RUN apt-get install wget && mkdir /files && wget http://pkp.sfu.ca/ojs/download/ojs-3.1.0.tar.gz && tar -xzf ojs-3.1.0.tar.gz && mv ojs-3.1.0 app && rm ojs-3.1.0.tar.gz && chown -R www-data app && chown www-data files
 RUN mkdir -p /app && rm -fr /var/www/html && ln -s /app /var/www/html
 
 #Environment variables to configure php
@@ -38,5 +38,5 @@ ENV PHP_POST_MAX_SIZE 10M
 # Add volumes for MySQL 
 VOLUME  ["/etc/mysql", "/var/lib/mysql" ]
 
-EXPOSE 80 3306
+EXPOSE 80 443
 CMD ["/run.sh"]
