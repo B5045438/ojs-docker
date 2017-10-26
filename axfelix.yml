@@ -2,5 +2,5 @@ lamp:
   image: axfelix/lamp
   ports:
     - 80:80
-    - 3306:3306
+    - 443:443
     
