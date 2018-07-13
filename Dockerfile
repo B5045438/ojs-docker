@@ -29,10 +29,6 @@ RUN chmod 755 /*.sh
 # MySQL Home DIR fix
 RUN  usermod -d /var/lib/mysql/ mysql && find /var/lib/mysql -type f -exec touch {} \; && service mysql start
 
-# config to enable .htaccess
-ADD apache_default /etc/apache2/sites-available/000-default.conf
-RUN a2enmod rewrite
-
 # Cloning, cleaning and seting up OJS git repositories
 RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
