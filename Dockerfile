@@ -1,11 +1,14 @@
-FROM ubuntu:trusty
-MAINTAINER Alex Garnett <garnett@sfu.ca>
+FROM ubuntu:latest
+MAINTAINER Ammar Hasan <b5045438@ncl.ac.uk>
 
 # Install packages
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && \
-  apt-get -y install supervisor git apache2 libapache2-mod-php5 mysql-server php5-mysql pwgen php-apc php5-mcrypt && \
-  echo "ServerName localhost" >> /etc/apache2/apache2.conf
+  apt-get -y install composer npm supervisor git apache2 libapache2-mod-php7.2 mysql-server php7.2-mysql pwgen curl php7.2-curl php7.2-xml zip unzip php-zip php-mbstring && \
+  echo "ServerName localhost" >> /etc/apache2/apache2.conf 
+
+# Add volumes for MySQL
+VOLUME  ["/etc/mysql", "/var/lib/mysql"]
 
 # Add image configuration and scripts
 ADD start-apache2.sh /start-apache2.sh
@@ -23,20 +26,40 @@ RUN rm -rf /var/lib/mysql/*
 ADD create_mysql_admin_user.sh /create_mysql_admin_user.sh
 RUN chmod 755 /*.sh
 
+# MySQL Home DIR fix
+RUN  usermod -d /var/lib/mysql/ mysql && find /var/lib/mysql -type f -exec touch {} \; && service mysql start
+
 # config to enable .htaccess
 ADD apache_default /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# Get & setup OJS
-RUN apt-get install wget && mkdir /files && wget http://pkp.sfu.ca/ojs/download/ojs-3.1.0.tar.gz && tar -xzf ojs-3.1.0.tar.gz && mv ojs-3.1.0 app && rm ojs-3.1.0.tar.gz && chown -R www-data app && chown www-data files
-RUN mkdir -p /app && rm -fr /var/www/html && ln -s /app /var/www/html
+# Cloning, cleaning and seting up OJS git repositories
+RUN apt-get install git -y \
+    && git config --global url.https://.insteadOf git:// \
+    && rm -fr /var/www/html/* \
+    && git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html \
+    && cd /var/www/html/lib/pkp \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer update \
+    && cd /var/www/html/plugins/paymethod/paypal \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer update \
+    && cd /var/www/html/plugins/generic/citationStyleLanguage \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer update \
+    && cd /var/www/html \
+    && npm install \ 
+    && npm run build \
+    && find . | grep .git | xargs rm -rf \
+    && apt-get remove git -y \
+    && apt-get autoremove -y \
+    && apt-get clean -y \
+    && cp /var/www/html/config.TEMPLATE.inc.php /var/www/html/config.inc.php \
+    && chmod ug+rw /var/www/html/config.inc.php \
+    && mkdir -p /var/www/files/ \
+    && chown -R www-data:www-data /var/www/
 
 #Environment variables to configure php
 ENV PHP_UPLOAD_MAX_FILESIZE 10M
 ENV PHP_POST_MAX_SIZE 10M
 
-# Add volumes for MySQL 
-VOLUME  ["/etc/mysql", "/var/lib/mysql" ]
-
 EXPOSE 80 443
 CMD ["/run.sh"]
+
