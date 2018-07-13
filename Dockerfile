@@ -44,9 +44,6 @@ RUN apt-get install git -y \
     && npm install \ 
     && npm run build \
     && find . | grep .git | xargs rm -rf \
-    && apt-get remove git -y \
-    && apt-get autoremove -y \
-    && apt-get clean -y \
     && cp /var/www/html/config.TEMPLATE.inc.php /var/www/html/config.inc.php \
     && chmod ug+rw /var/www/html/config.inc.php \
     && mkdir -p /var/www/files/ \
