@@ -29,17 +29,22 @@ RUN chmod 755 /*.sh
 # MySQL Home DIR fix
 RUN  usermod -d /var/lib/mysql/ mysql && find /var/lib/mysql -type f -exec touch {} \; && service mysql start
 
-# Cloning, cleaning and seting up OJS git repositories
+# config to enable .htaccess
+ADD apache_default /etc/apache2/sites-available/000-default.conf
+RUN a2enmod rewrite
+
+# Cloning, cleaning, seting up OJS git repositories and plugins
 RUN apt-get install git -y \
     && git config --global url.https://.insteadOf git:// \
     && rm -fr /var/www/html/* \
-    && git clone -v --recursive --progress https://github.com/pkp/ojs.git /var/www/html \
+    && git clone -v --recursive --progress --single-branch -b ojs-stable-3_1_1 https://github.com/pkp/ojs.git /var/www/html \
     && cd /var/www/html/lib/pkp \
     && COMPOSER_ALLOW_SUPERUSER=1 composer update \
     && cd /var/www/html/plugins/paymethod/paypal \
     && COMPOSER_ALLOW_SUPERUSER=1 composer update \
     && cd /var/www/html/plugins/generic/citationStyleLanguage \
     && COMPOSER_ALLOW_SUPERUSER=1 composer update \
+    && git clone -v --progress https://github.com/Vitaliy-1/oldGregg.git /var/www/html/plugins/themes/oldGregg \
     && cd /var/www/html \
     && npm install \ 
     && npm run build \
@@ -47,7 +52,7 @@ RUN apt-get install git -y \
     && cp /var/www/html/config.TEMPLATE.inc.php /var/www/html/config.inc.php \
     && chmod ug+rw /var/www/html/config.inc.php \
     && mkdir -p /var/www/files/ \
-    && chown -R www-data:www-data /var/www/
+    && chown -R www-data:www-data /var/www/  
 
 #Environment variables to configure php
 ENV PHP_UPLOAD_MAX_FILESIZE 10M
